@@ -1,0 +1,25 @@
+---
+# vars file for fah
+packages:
+  - pciutils
+  - usbutils
+  - vim
+  - net-tools
+  - kernel
+  - kernel-tools
+  - kernel-tools-libs
+  - kernel-devel
+  - kernel-debug-devel
+  - kernel-headers
+  - '@Development Tools'
+  - dkms
+  - htop
+  - dstat
+  - iptraf-ng
+  - katello-host-tools
+  - katello-host-tools-tracer
+
+fahclient: https://download.foldingathome.org/releases/public/release/fahclient/centos-6.7-64bit/v7.5/fahclient-7.5.1-1.x86_64.rpm
+epel: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+nvidia_installer_url: http://us.download.nvidia.com/XFree86/Linux-x86_64/{{ nvidia_driver_version }}/NVIDIA-Linux-x86_64-{{ nvidia_driver_version }}.run
+nvidia_installer_path: /tmp

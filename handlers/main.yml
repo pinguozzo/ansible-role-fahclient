@@ -1,0 +1,17 @@
+- name: restart firewalld
+  service: name=firewalld state=restarted
+
+- name: stop fahclient
+  command:
+    cmd: /etc/init.d/FAHClient stop
+
+- name: restart fahclient
+  command:
+    cmd: /etc/init.d/FAHClient restart
+
+- name: check reboot
+  command: needs-restarting -r
+  register: reboot_required
+  changed_when: false
+  ignore_errors: true
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'

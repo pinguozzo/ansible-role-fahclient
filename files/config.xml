@@ -1,0 +1,23 @@
+<config>
+  <!-- HTTP Server -->
+  <allow v='127.0.0.1'/>
+
+  <!-- Network -->
+  <proxy v=':8080'/>
+
+  <!-- Remote Command Server -->
+  <command-allow-no-pass v='127.0.0.1'/>
+  <password v=''/>
+
+  <!-- User Information -->
+  <passkey v=''/>
+  <team v=''/>
+  <user v=''/>
+
+  <!-- Web Server -->
+  <web-allow v=''/>
+
+  <!-- Folding Slots -->
+  <slot id='0' type='CPU'/>
+  <slot id='1' type='GPU'/>
+</config>

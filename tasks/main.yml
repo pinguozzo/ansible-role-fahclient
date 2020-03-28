@@ -1,0 +1,117 @@
+- name: ensure epel
+  package:
+    name: "{{ epel }}"
+    state: present
+
+- name: install prereq
+  package:
+    name:  "{{ packages }}"
+    state: latest
+
+- name: ensure packages are up-to-date
+  package:
+    name: "*"
+    state: latest
+  notify: check reboot
+
+- name: ensure fahclient is installed
+  package:
+    name: "{{ fahclient }}"
+    state: present
+
+- name: ensure config.xml is in place
+  copy:
+    src: fah/files/config.xml
+    dest: /etc/fahclient
+  notify: stop fahclient
+
+- name: ensure firewalld is configured
+  firewalld:
+    port: "{{ item }}"
+    permanent: yes
+    state: enabled
+  with_items:
+    - 7396/tcp
+    - 36330/tcp
+  notify: restart firewalld
+
+- name: get /tmp mountpoint options
+  set_fact:
+    tmp_mnt_options: "{{ mnt.options }}"
+  loop: "{{ ansible_mounts }}"
+  loop_control:
+    loop_var: mnt
+  when:
+    - '"/tmp" in mnt.mount'
+
+- name: get mount_opts
+  debug:
+    msg: "Current tmp_mnt_options are {{ tmp_mnt_options }}"
+
+- name: set mount_opts without noexec
+  set_fact:
+    new_mnt_options: "{{ tmp_mnt_options |regex_replace('noexec,') }}"
+
+- name: get new_mount_opts
+  debug:
+    var: new_mnt_options
+
+- name: ensure /tmp is set without noexec
+  mount:
+    src: "{{ mnt.device }}"
+    path: "{{ mnt.mount }}"
+    state: mounted
+    fstype: "{{ mnt.fstype }}"
+    opts: "{{ new_mnt_options }}"
+  loop: "{{ ansible_mounts }}"
+  loop_control:
+    loop_var: mnt
+  when:
+    - '"/tmp" in mnt.mount'
+
+- name: get install name
+  set_fact:
+    nvidia_installer: "{{ nvidia_installer_url | urlsplit('path') | regex_replace('(.*)/.*/.*/.*/', '\\1') }}"
+
+- name:
+  debug:
+    msg: "NVIDIA installer path /tmp/{{ nvidia_installer }}"
+
+- name: download NVIDIA installer
+  get_url:
+    url: "{{ nvidia_installer_url }}"
+    dest: "/tmp/{{ nvidia_installer }}"
+    mode: '0755'
+    owner: rex
+    group: rex
+
+- name: install NVIDIA driver
+  shell:
+    cmd: "/tmp/{{ nvidia_installer }} --ui=none --no-questions"
+  notify: restart fahclient
+  ignore_errors: True
+
+- name: ensure /tmp is set back to default options
+  mount:
+    src: "{{ mnt.device }}"
+    path: "{{ mnt.mount }}"
+    state: mounted
+    fstype: "{{ mnt.fstype }}"
+    state: mounted
+    opts: "{{ tmp_mnt_options }}"
+  loop: "{{ ansible_mounts }}"
+  loop_control:
+    loop_var: mnt
+  when:
+    - '"/tmp" in mnt.mount'
+
+- name: check if reboot is required
+  command: needs-restarting -r
+  register: reboot_required
+  changed_when: false
+  ignore_errors: true
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat'
+
+- name: reboot
+  reboot:
+  when: (ansible_distribution == 'CentOS' or ansible_distribution == 'RedHat') and reboot_required.rc == 1
